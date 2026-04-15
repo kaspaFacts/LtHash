@@ -5,33 +5,43 @@ const BLOCK_SIZE: usize = 64;
 
 /// Full-fidelity BLAKE2Xb (matches Go's blake2b.NewXOF)
 fn blake2xb(input: &[u8], out: &mut [u8]) {
-    // Phase 1: root hash
+    // === Phase 1: root ===
     let root = Params::new()
         .hash_length(64)
         .fanout(1)
-        .max_depth(1)
-        .inner_hash_length(0)
+        .max_depth(2)
+        .leaf_length(0)
+        .node_offset(0)
+        .node_depth(0)
+        .inner_hash_length(64)
+        .last_node(true)
         .to_state()
         .update(input)
         .finalize();
 
     let root_bytes = root.as_bytes();
 
-    // Phase 2: expansion
+    // === Phase 2: expansion ===
     let mut offset = 0;
     let mut node_offset = 0u64;
+
+    let total_blocks = (out.len() + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
     while offset < out.len() {
         let remaining = out.len() - offset;
         let block_len = remaining.min(BLOCK_SIZE);
 
+        let is_last = node_offset == (total_blocks as u64 - 1);
+
         let hash = Params::new()
             .hash_length(block_len)
-            .fanout(0)
-            .max_depth(0)
+            .fanout(1)
+            .max_depth(2)
+            .leaf_length(0)
             .node_offset(node_offset)
+            .node_depth(1)
             .inner_hash_length(64)
-            .last_node(true)
+            .last_node(is_last)
             .to_state()
             .update(root_bytes)
             .finalize();
