@@ -1,4 +1,4 @@
-# LtHash (Rust Port)
+# LtHash (Rust Port)  UNTESTED
 
 This is a Rust port of the LtHash algorithm originally implemented in Go.
 
